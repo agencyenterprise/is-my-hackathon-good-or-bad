@@ -47,6 +47,7 @@ def main():
     selected_city = st.text_input("City", max_chars=30)
 
     if selected_city:
+        print(f"CITY__: {selected_city}")
         try:
             attractions = get_attractions(selected_city)
         except:
