@@ -43,6 +43,7 @@ def stripe_other_cities(items):
 
 
 def main():
+    st.header("GPTravel")
     selected_city = st.text_input("City", max_chars=30)
 
     if selected_city:
