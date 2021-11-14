@@ -1,4 +1,5 @@
 import os
+from textwrap import dedent
 
 import openai
 import streamlit as st
@@ -43,7 +44,13 @@ def stripe_other_cities(items):
 
 
 def main():
-    st.header("GPTravel")
+    st.header("GPTrav3l ✈️")
+    description_text = dedent("""
+    Write the name of the city you want to travel below.
+    We will use GPT-3 to recommend the city top-5 attractions,
+    and what you should bring with you.
+    """)
+    st.write(description_text)
     selected_city = st.text_input("City", max_chars=30)
 
     if selected_city:
