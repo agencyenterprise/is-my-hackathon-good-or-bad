@@ -1,24 +1,55 @@
 import os
+import random
 from textwrap import dedent
 
 import openai
 import streamlit as st
 
+TOPICS = [
+    "chickens",
+    "dogs",
+    "cats",
+    "birds",
+    "mice",
+    "snakes",
+    "turtles",
+    "hamsters",
+    "pigs",
+    "sheep",
+    "goats",
+    "dolphins",
+    "penguins",
+    "polar bears",
+    "monsters",
+    "zombies",
+    "ghosts",
+    "vampires",
+    "werewolves",
+    "politicians",
+    "scientists",
+    "astronauts",
+    "astronomers",
+    "phd students",
+    "pilots",
+    "physicians",
+    "physicists"
+]
+
 
 @st.cache
-def get_attractions(city):
-    prompt = f"Q: What are the top five tourist attractions of Paris?\nA: Eiffel Tower; Louvre Museum; Notre-Dame; Musée d'Orsay; Champs-Élysées Avenue.\n###\nQ: What are the top five tourist attractions of New York?\nA: Empire State Building; Statue of Liberty; Times Square; Central Park; Broadway\n###\nQ: What are the top five tourist attractions of London?\nA: Buckingham Palace; Big Ben; Tower Bridge; London Eye; St. Paul's Cathedral.\n###\nQ: What are the top five tourist attractions of Rome?\nA: Colosseum; Vatican; Trevi Fountain; Spanish Steps; Piazza Navona.\n###\nQ: What are the top five tourist attractions of {city}?\nA:"
+def generate_parody(lyrics, topic):
+    prompt = f"Modify the lyrics to be about {topic}:\n----\n{lyrics}\n----",
     response = openai.Completion.create(
-        engine="davinci",
+        engine="text-davinci-002",
         prompt=prompt,
-        temperature=0,
-        max_tokens=60,
+        temperature=0.8,
+        max_tokens=1024,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0,
-        stop=["###"],
+        stop=["----"]
     )
-    return response["choices"][0]["text"].splitlines()[0].split(";")
+    return response["choices"][0]["text"]
 
 
 @st.cache
@@ -35,39 +66,51 @@ def get_items(city):
     return response["choices"][0]["text"].splitlines()
 
 
-def stripe_other_cities(items):
-    """Remove repetition that GPT-3 might generate"""
-    for item in items:
-        if item.startswith("For a trip to"):
-            return
-        yield item
+@st.cache
+def load_lyrics():
+    with open("lyrics.txt", "r", newline='') as f:
+        lyrics = f.read().split('----\n')
+    return lyrics
 
 
 def main():
-    st.header("GPTrav3l ✈️")
+    st.header("🎶 Parodies Generator")
     description_text = dedent("""
-    Write the name of the city you want to travel below.
-    We will use GPT-3 to recommend the city top-5 attractions,
-    and what you should bring with you.
+    Add the lyrics below and choose a topic to create a parody.
+    We will modify the lyrics to make it about the chosen topic.
     """)
     st.write(description_text)
-    selected_city = st.text_input("City", max_chars=30)
+    default_lyrics = load_lyrics()
 
-    if selected_city:
-        print(f"CITY__: {selected_city}")
+    topic_input = st.empty()
+    lyrics_input = st.empty()
+    lyrics = lyrics_input.text_area(
+        "Lyrics")
+    selected_topic = selected_topic = topic_input.text_input(
+        "Topic")
+
+    randomize_button = st.button("Generate random parody!")
+    generate_button = st.button("Generate parody!")
+
+    if randomize_button:
+        lyrics = lyrics_input.text_area(
+            "Lyrics", random.choice(default_lyrics))
+        selected_topic = selected_topic = topic_input.text_input(
+            "Topic", random.choice(TOPICS))
         try:
-            attractions = get_attractions(selected_city)
+            parody = generate_parody(lyrics, selected_topic)
         except:
-            st.text(f"Couldn't find the city {selected_city}")
+            st.text(f"Something went wrong. Please try again.")
         else:
-            st.subheader("Top-5 attractions")
-            st.markdown("\n".join([f'* {x.rstrip(".")}' for x in attractions]))
-            st.subheader("What you should bring with you")
-            items = get_items(selected_city)
-            items = [x.split("*") for x in items]
-            items = [item for sublist in items for item in sublist if item]
-            items = list(stripe_other_cities(items))
-            st.markdown("\n".join([f'* {x.lstrip("-")}' for x in items]))
+            st.text(parody)
+
+    if generate_button:
+        try:
+            parody = generate_parody(lyrics, selected_topic)
+        except:
+            st.text(f"Something went wrong. Please try again.")
+        else:
+            st.text(parody)
 
 
 if __name__ == "__main__":
